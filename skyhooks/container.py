@@ -1,4 +1,5 @@
-"""Webook handlers
+"""Container object for registering hook callbacks, and maintaining hook
+pointers in a persistence layer (e.g. MongoDB) with TTLs.
 """
 
 import logging
