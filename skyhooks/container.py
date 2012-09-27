@@ -6,16 +6,18 @@ import logging
 import asyncmongo
 from bson.objectid import ObjectId
 
-from tornado import ioloop
 from skyhooks import settings
 
 
 class WebhookContainer(object):
-    account_callbacks = {}
-    user_callbacks = {}
+    callbacks = {}
 
-    def __init__(self):
-        self.io_loop = ioloop.IOLoop.instance()
+    def __init__(self, config):
+        if config['system_type'] == 'twisted':
+            raise NotImplemented('Twisted Matrix support is planned for the'
+                                 ' future.')
+
+        self.config = config
 
     @property
     def db(self):
@@ -31,7 +33,6 @@ class WebhookContainer(object):
             self.account_callbacks[account_id] = []
 
         self.account_callbacks[account_id].append(callback)
-        print self.account_callbacks
 
         query = {
             'accountId': ObjectId(account_id),
@@ -48,7 +49,7 @@ class WebhookContainer(object):
 
         callback_wrapper = lambda doc, error: self._mongo_callback(doc, error,
                                                                    call_next)
-        print "Registering webhook for: " + str(query)
+        logging.debug("Registering webhook for: %s", query)
 
         self.db.webhooks.update(query, query,
                 callback=callback_wrapper,
@@ -73,7 +74,7 @@ class WebhookContainer(object):
             callback_wrapper = lambda doc, error: self._mongo_callback(doc,
                                                            error, call_next)
 
-            print "Unregistering webhook for: %s" % (str(query),)
+            logging.debug("Unregistering webhook for: %s", query)
             self.db.webhooks.remove(query,
                     callback=callback_wrapper)
 
@@ -84,7 +85,6 @@ class WebhookContainer(object):
             call_next()
 
     def notify(self, account_id, data, user_id=None):
-        print self.account_callbacks
         if account_id in self.account_callbacks:
             for callback in self.account_callbacks[account_id]:
                 self.io_loop.add_callback(lambda cb=callback: cb(data))
@@ -93,8 +93,6 @@ class WebhookContainer(object):
                 for callback in self.user_callbacks[user_id]:
                     self.io_loop.add_callback(lambda cb=callback: cb(data))
 
-            print "notify true"
             return True
 
-        print "notify false"
         return False
