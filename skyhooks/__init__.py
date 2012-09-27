@@ -23,18 +23,18 @@ class IOLoop(object):
     # Stores the last Deferred object, only used for Twisted Matrix
     _last_deferred = None
 
-    def __init__(self, system):
-        self.system = system = system.lower()
+    def __init__(self, system_type):
+        self.system = system_type.lower()
 
-        if system == 'tornado':
+        if self.system == 'tornado':
             from tornado import ioloop
             self._loop = ioloop.IOLoop.instance()
 
-        elif system == 'gevent':
+        elif self.system == 'gevent':
             from gevent import Greenlet
             self._greenlet = Greenlet
 
-        elif system == 'twisted':
+        elif self.system == 'twisted':
             from twisted import reactor
             self._reactor = reactor
 

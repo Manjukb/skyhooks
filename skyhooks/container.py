@@ -6,7 +6,7 @@ import logging
 import asyncmongo
 from bson.objectid import ObjectId
 
-from skyhooks import settings
+from skyhooks import IOLoop
 
 
 class WebhookContainer(object):
@@ -18,12 +18,14 @@ class WebhookContainer(object):
                                  ' future.')
 
         self.config = config
+        self.ioloop = IOLoop(config['system_type'])
 
     @property
     def db(self):
         if not hasattr(self, '_db'):
             self._db = asyncmongo.Client(pool_id='skyhooks',
-                    host=settings.MONGO_HOST, port=settings.MONGO_PORT,
+                    host=self.config['MONGO_HOST'],
+                    port=self.config['MONGO_PORT'],
                     dbname='skyhooks')
         return self._db
 
