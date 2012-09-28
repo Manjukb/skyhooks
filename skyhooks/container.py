@@ -29,25 +29,16 @@ class WebhookContainer(object):
                     dbname='skyhooks')
         return self._db
 
-    def register(self, account_id, callback, url, user_id=None,
-                 call_next=None):
-        if account_id not in self.account_callbacks:
-            self.account_callbacks[account_id] = []
+    def register(self, key, callback, url, call_next=None):
+        if key not in self.account_callbacks:
+            self.account_callbacks[key] = []
 
-        self.account_callbacks[account_id].append(callback)
+        self.account_callbacks[key].append(callback)
 
         query = {
-            'accountId': ObjectId(account_id),
+            'key': ObjectId(key),
             'url': url
         }
-
-        if user_id:
-            if user_id not in self.user_callbacks:
-                self.user_callbacks[user_id] = []
-
-            self.user_callbacks[user_id].append(callback)
-
-            query['userId'] = ObjectId(user_id)
 
         callback_wrapper = lambda doc, error: self._mongo_callback(doc, error,
                                                                    call_next)
@@ -57,21 +48,15 @@ class WebhookContainer(object):
                 callback=callback_wrapper,
                 upsert=True)
 
-    def unregister(self, account_id, callback, url, user_id=None,
-                   call_next=None):
+    def unregister(self, key, callback, url, call_next=None):
 
-        if account_id in self.account_callbacks:
-            self.account_callbacks[account_id].remove(callback)
+        if key in self.account_callbacks:
+            self.account_callbacks[key].remove(callback)
 
             query = {
-                'accountId': ObjectId(account_id),
+                'key': ObjectId(key),
                 'url': url
             }
-
-            if user_id in self.user_callbacks:
-                self.user_callbacks[user_id].remove(callback)
-
-                query['userId'] = ObjectId(user_id)
 
             callback_wrapper = lambda doc, error: self._mongo_callback(doc,
                                                            error, call_next)
@@ -86,14 +71,10 @@ class WebhookContainer(object):
         if call_next:
             call_next()
 
-    def notify(self, account_id, data, user_id=None):
-        if account_id in self.account_callbacks:
-            for callback in self.account_callbacks[account_id]:
-                self.io_loop.add_callback(lambda cb=callback: cb(data))
-
-            if user_id in self.user_callbacks:
-                for callback in self.user_callbacks[user_id]:
-                    self.io_loop.add_callback(lambda cb=callback: cb(data))
+    def notify(self, key, data):
+        if key in self.account_callbacks:
+            for callback in self.account_callbacks[key]:
+                self.ioloop.add_callback(lambda cb=callback: cb(data))
 
             return True
 
