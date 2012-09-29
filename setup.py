@@ -20,8 +20,16 @@ setup(
     author='Wes Mason',
     author_email='wes@serverdensity.com',
     url='https://github.com/serverdensity/skyhooks',
-    packages=find_packages('src', exclude=['ez_setup']),
+    packages=find_packages('.', exclude=['ez_setup']),
     install_requires=open(os.path.join(cwd, 'requirements.txt')).readlines(),
+    extra_requires={
+        'gevent': open(os.path.join(cwd, 'gevent_requirements.txt')
+                                        ).readlines(),
+        'tornado': open(os.path.join(cwd, 'tornado_requirements.txt')
+                                        ).readlines(),
+        'twisted': open(os.path.join(cwd, 'twisted_requirements.txt')
+                                        ).readlines(),
+    },
     package_data={'skyhooks': ['version.txt']},
     include_package_data=True,
     entry_points={
