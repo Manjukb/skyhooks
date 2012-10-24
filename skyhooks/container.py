@@ -3,9 +3,6 @@ pointers in a persistence layer (e.g. MongoDB) with TTLs.
 """
 
 import logging
-import asyncmongo
-from bson.objectid import ObjectId
-
 from skyhooks import IOLoop
 
 
@@ -21,13 +18,15 @@ class WebhookContainer(object):
         self.ioloop = IOLoop(config['system_type'])
 
     @property
-    def db(self):
-        if not hasattr(self, '_db'):
-            self._db = asyncmongo.Client(pool_id='skyhooks',
-                    host=self.config['MONGO_HOST'],
-                    port=self.config['MONGO_PORT'],
-                    dbname='skyhooks')
-        return self._db
+    def backend(self):
+        if not hasattr(self, '_backend'):
+            backend_path = '.backends.%s' % (self.config.get('backend',
+                                                             'mongodb'))
+            backend_module = __import__(name=backend_path, globals=globals(),
+                   locals=locals(), fromlist="*")
+            self._backend = backend_module.Backend(self.config, self.ioloop)
+
+        return self._backend
 
     def register(self, key, callback, url, call_next=None):
         if key not in self.account_callbacks:
@@ -36,7 +35,7 @@ class WebhookContainer(object):
         self.account_callbacks[key].append(callback)
 
         query = {
-            'key': ObjectId(key),
+            'key': key,
             'url': url
         }
 
@@ -54,7 +53,7 @@ class WebhookContainer(object):
             self.account_callbacks[key].remove(callback)
 
             query = {
-                'key': ObjectId(key),
+                'key': key,
                 'url': url
             }
 
