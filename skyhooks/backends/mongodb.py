@@ -1,7 +1,6 @@
 """Abstracted MongoDB connection and query utils
 """
 
-from bson import ObjectId
 from skyhooks import IOLoop
 
 
@@ -55,14 +54,18 @@ class Backend(object):
     def collection(self):
         return self.db[self.config['mongo_collection']]
 
-    def get_hooks(self, key, url=None, callback=None):
+    def get_hooks(self, keys, url=None, callback=None):
 
         if callback is None:
             callback = lambda doc, error: None
 
-        query = {
-            'key': ObjectId(key)
-        }
+        if type(keys) in ('list', 'tuple'):
+            keys = zip(keys)
+
+        query = {}
+
+        for name, value in keys.iteritems():
+            query[name] = value
 
         if self.config['system_type'] == 'twisted':
             pass
@@ -83,18 +86,21 @@ class Backend(object):
 
             self.ioloop.add_callback(find)
 
-    def update_hooks(self, key, url, callback=None):
+    def update_hooks(self, keys, url, callback=None):
 
         if callback is None:
             callback = lambda doc, error: None
 
-        query = {
-            'key': ObjectId(key)
-        }
+        if type(keys) in ('list', 'tuple'):
+            keys = zip(keys)
+
+        query = {}
         doc = {
-            'key': ObjectId(key),
             'url': url
         }
+
+        for name, value in keys.iteritems():
+            doc[name] = query[name] = value
 
         if self.config['system_type'] == 'twisted':
             pass
@@ -120,15 +126,20 @@ class Backend(object):
 
             self.ioloop.add_callback(update)
 
-    def remove_hooks(self, key, url, callback=None):
+    def remove_hooks(self, keys, url, callback=None):
 
         if callback is None:
             callback = lambda doc, error: None
 
+        if type(keys) in ('list', 'tuple'):
+            keys = zip(keys)
+
         query = {
-            'key': ObjectId(key),
             'url': url
         }
+
+        for name, value in keys.iteritems():
+            query[name] = value
 
         if self.config['system_type'] == 'twisted':
             pass

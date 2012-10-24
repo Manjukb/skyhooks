@@ -8,7 +8,7 @@ def get_version_string():
 
 
 def get_version():
-    return get_version_string().split('.')
+    return tuple(int(i) for i in get_version_string().split('.'))
 
 __version__ = get_version_string()
 
