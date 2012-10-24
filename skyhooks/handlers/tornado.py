@@ -1,6 +1,7 @@
 """Tornado web handlers for webhook POST requests.
 """
 
+import logging
 from tornado.web import RequestHandler
 from tornado.escape import json_decode
 
@@ -10,16 +11,16 @@ class WebhookHandler(RequestHandler):
     via registered callbacks.
     """
 
-    def post(self, account_id=None, user_id=None):
-        data = json_decode(self.request.body)
-        print data
+    def post(self):
+        payload = json_decode(self.request.body)
+        data = payload['data']
+        keys = payload['keys']
 
-        print "received webhook postback for %s %s" % (account_id, user_id)
+        logging.info("Received webhook postback for %s", keys)
 
-        if not self.application.webhook_container.notify(account_id, data,
-                                                         user_id=user_id):
+        if not self.application.webhook_container.notify(keys, data):
             self.set_status(404)
             return
 
-        print "webhook ok"
+        # Celery compatible "hook" response, good enough for our purposes
         return '{"status": "ok"}'
