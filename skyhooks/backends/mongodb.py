@@ -59,9 +59,6 @@ class Backend(object):
         if callback is None:
             callback = lambda doc, error: None
 
-        if type(keys) in ('list', 'tuple'):
-            keys = zip(keys)
-
         query = {}
 
         for name, value in keys.iteritems():
@@ -90,9 +87,6 @@ class Backend(object):
 
         if callback is None:
             callback = lambda doc, error: None
-
-        if type(keys) in ('list', 'tuple'):
-            keys = zip(keys)
 
         query = {}
         doc = {
@@ -130,9 +124,6 @@ class Backend(object):
 
         if callback is None:
             callback = lambda doc, error: None
-
-        if type(keys) in ('list', 'tuple'):
-            keys = zip(keys)
 
         query = {
             'url': url

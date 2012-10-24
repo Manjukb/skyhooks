@@ -28,53 +28,54 @@ class WebhookContainer(object):
 
         return self._backend
 
-    def register(self, key, callback, url, call_next=None):
-        if key not in self.account_callbacks:
-            self.account_callbacks[key] = []
+    def register(self, keys, callback, url, call_next=None):
 
-        self.account_callbacks[key].append(callback)
+        if type(keys) in ('list', 'tuple'):
+            keys = zip(keys)
 
-        query = {
-            'key': key,
-            'url': url
-        }
+        for key, value in keys.iteritems():
+            if key not in self.callbacks:
+                self.callbacks[key] = {}
 
-        callback_wrapper = lambda doc, error: self._mongo_callback(doc, error,
-                                                                   call_next)
-        logging.debug("Registering webhook for: %s", query)
+            if value not in self.callbacks[key]:
+                self.callbacks[key][value] = []
 
-        self.db.webhooks.update(query, query,
-                callback=callback_wrapper,
-                upsert=True)
+            self.callbacks[key][value].append(callback)
 
-    def unregister(self, key, callback, url, call_next=None):
+        callback_wrapper = lambda doc, error: self._query_callback(
+                                                doc, error, 'registration',
+                                                call_next)
 
-        if key in self.account_callbacks:
-            self.account_callbacks[key].remove(callback)
+        logging.info('Registering webhook for %s %s', keys, url)
+        self.backend.update_hooks(key, url, callback_wrapper)
 
-            query = {
-                'key': key,
-                'url': url
-            }
+    def unregister(self, keys, callback, url, call_next=None):
 
-            callback_wrapper = lambda doc, error: self._mongo_callback(doc,
-                                                           error, call_next)
+        if type(keys) in ('list', 'tuple'):
+            keys = zip(keys)
 
-            logging.debug("Unregistering webhook for: %s", query)
-            self.db.webhooks.remove(query,
-                    callback=callback_wrapper)
+        for key, value in keys.iteritems():
+            if key in self.callbacks and value in self.callbacks[key]:
+                self.callbacks[key][value].remove(callback)
 
-    def _mongo_callback(self, doc, error, call_next=None):
+            callback_wrapper = lambda doc, error: self._query_callback(
+                                                    doc, error, 'removal',
+                                                    call_next)
+
+            logging.info('Removing webhook for %s %s', keys, url)
+            self.backend.remove_hooks(key, url, callback_wrapper)
+
+    def _query_callback(self, doc, error, action, call_next=None):
         if error:
-            logging.error(error)
+            logging.error('Webhook %s error: %s', action, error)
         if call_next:
             call_next()
 
-    def notify(self, key, data):
-        if key in self.account_callbacks:
-            for callback in self.account_callbacks[key]:
-                self.ioloop.add_callback(lambda cb=callback: cb(data))
+    def notify(self, keys, data):
+        if type(keys) in ('list', 'tuple'):
+            keys = zip(keys)
 
-            return True
-
-        return False
+        for key, value in keys.iteritems():
+            if key in self.callbacks and value in self.callbacks[key]:
+                for callback in self.callbacks[key][value]:
+                    self.ioloop.add_callback(lambda cb=callback: cb(data))
