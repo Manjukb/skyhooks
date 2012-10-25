@@ -1,6 +1,7 @@
 """Abstracted MongoDB connection and query utils
 """
 
+from datetime import datetime
 from skyhooks import IOLoop
 
 
@@ -11,14 +12,6 @@ class Backend(object):
             raise NotImplemented('Twisted Matrix support is planned for the'
                                  ' future.')
         self.config = config
-
-        if self.config['system_type'] == 'tornado':
-            import asyncmongo
-            self.mongo = asyncmongo
-
-        elif self.config['system_type'] == 'gevent':
-            import pymongo
-            self.mongo = pymongo
 
         # Sane defaults
         if 'mongo' not in self.config:
@@ -33,22 +26,16 @@ class Backend(object):
         else:
             self.ioloop = ioloop
 
-    @property
-    def db(self):
-        if not hasattr(self, '_db'):
-            if self.config['system_type'] == 'twisted':
-                pass
+        if self.config['system_type'] == 'tornado':
+            import asyncmongo
+            self.db = asyncmongo.Client(pool_id='skyhooks',
+                    **self.config['mongo'])
 
-            elif self.config['system_type'] == 'tornado':
-                self._db = self.mongo.Client(pool_id='skyhooks',
-                        **self.config['mongo'])
-
-            elif self.config['system_type'] == 'gevent':
-                self._db = self.mongo.Connection(pool_id='skyhooks',
-                        use_greenlets=True,
-                        **self.config['mongo'])
-
-        return self._db
+        elif self.config['system_type'] == 'gevent':
+            import pymongo
+            self.db = pymongo.Connection(pool_id='skyhooks',
+                    use_greenlets=True,
+                    **self.config['mongo'])
 
     @property
     def collection(self):
@@ -90,7 +77,8 @@ class Backend(object):
 
         query = {}
         doc = {
-            'url': url
+            'url': url,
+            'updated': datetime.now()
         }
 
         for name, value in keys.iteritems():
