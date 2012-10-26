@@ -1,6 +1,8 @@
 """Tornado web handlers for webhook POST requests.
 """
 
+from __future__ import absolute_import
+
 import logging
 from tornado.web import RequestHandler
 from tornado.escape import json_decode

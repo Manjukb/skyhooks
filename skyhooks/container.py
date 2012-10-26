@@ -10,6 +10,7 @@ class WebhookContainer(object):
     callbacks = {}
 
     def __init__(self, config):
+
         if config['system_type'] == 'twisted':
             raise NotImplemented('Twisted Matrix support is planned for the'
                                  ' future.')
@@ -19,6 +20,9 @@ class WebhookContainer(object):
 
     @property
     def backend(self):
+        """Property with lazyloaded Backend instance
+        """
+
         if not hasattr(self, '_backend'):
             backend_path = '.backends.%s' % (self.config.get('backend',
                                                              'mongodb'))
@@ -27,6 +31,13 @@ class WebhookContainer(object):
             self._backend = backend_module.Backend(self.config, self.ioloop)
 
         return self._backend
+
+    def _query_callback(self, doc, error, action, call_next=None):
+
+        if error:
+            logging.error('Webhook %s error: %s', action, error)
+        if call_next:
+            call_next()
 
     def register(self, keys, callback, url, call_next=None):
 
@@ -65,13 +76,8 @@ class WebhookContainer(object):
             logging.info('Removing webhook for %s %s', keys, url)
             self.backend.remove_hooks(key, url, callback_wrapper)
 
-    def _query_callback(self, doc, error, action, call_next=None):
-        if error:
-            logging.error('Webhook %s error: %s', action, error)
-        if call_next:
-            call_next()
-
     def notify(self, keys, data):
+
         if type(keys) in ('list', 'tuple'):
             keys = zip(keys)
 
@@ -79,3 +85,12 @@ class WebhookContainer(object):
             if key in self.callbacks and value in self.callbacks[key]:
                 for callback in self.callbacks[key][value]:
                     self.ioloop.add_callback(lambda cb=callback: cb(data))
+
+    def renew(self, keys, url):
+
+        if type(keys) in ('list', 'tuple'):
+            keys = zip(keys)
+
+        for key, value in keys.iteritems():
+            if key in self.callbacks and value in self.callbacks[key]:
+                self.backend.update_hooks(keys, url)
