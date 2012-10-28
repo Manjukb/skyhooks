@@ -9,14 +9,28 @@ from skyhooks import IOLoop
 class WebhookContainer(object):
     callbacks = {}
 
-    def __init__(self, config):
+    def __init__(self, config=None, **kwargs):
 
-        if config['system_type'] == 'twisted':
+        if config is None:
+            config = {}
+        config.extend(kwargs)
+
+        if 'system_type' not in config:
+            raise AttributeError('Please set the system_type to either gevent '
+                                 'or tornado')
+
+        elif config['system_type'] == 'twisted':
             raise NotImplemented('Twisted Matrix support is planned for the'
                                  ' future.')
 
         self.config = config
         self.ioloop = IOLoop(config['system_type'])
+
+        if self.config.get('auto_renew', True):
+            if 'renew_seconds' not in self.config:
+                self.config['renew_seconds'] = 120
+
+            self.queue_renew_all()
 
     @property
     def backend(self):
@@ -86,11 +100,13 @@ class WebhookContainer(object):
                 for callback in self.callbacks[key][value]:
                     self.ioloop.add_callback(lambda cb=callback: cb(data))
 
-    def renew(self, keys, url):
+    def queue_renew_all(self, *args, **kwargs):
 
-        if type(keys) in ('list', 'tuple'):
-            keys = zip(keys)
+        self.ioloop.add_timeout(self.renew_all, self.config['renew_seconds'])
 
-        for key, value in keys.iteritems():
-            if key in self.callbacks and value in self.callbacks[key]:
-                self.backend.update_hooks(keys, url)
+    def renew_all(self):
+
+        keys = dict((k, v.keys()) for (k, v) in self.callbacks.iteritems())
+        if keys:
+            self.backend.update_hooks(keys, callback=self.queue_renew_all,
+                                  create=False)
