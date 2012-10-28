@@ -46,14 +46,12 @@ class WebhookContainer(object):
 
         return self._backend
 
-    def _query_callback(self, doc, error, action, call_next=None):
+    def _query_callback(self, doc, error, action):
 
         if error:
             logging.error('Webhook %s error: %s', action, error)
-        if call_next:
-            call_next()
 
-    def register(self, keys, callback, url, call_next=None):
+    def register(self, keys, callback, url):
 
         if type(keys) in ('list', 'tuple'):
             keys = zip(keys)
@@ -68,13 +66,12 @@ class WebhookContainer(object):
             self.callbacks[key][value].append(callback)
 
         callback_wrapper = lambda doc, error: self._query_callback(
-                                                doc, error, 'registration',
-                                                call_next)
+                                                doc, error, 'registration')
 
         logging.info('Registering webhook for %s %s', keys, url)
         self.backend.update_hooks(key, url, callback_wrapper)
 
-    def unregister(self, keys, callback, url, call_next=None):
+    def unregister(self, keys, callback, url):
 
         if type(keys) in ('list', 'tuple'):
             keys = zip(keys)
@@ -84,8 +81,7 @@ class WebhookContainer(object):
                 self.callbacks[key][value].remove(callback)
 
             callback_wrapper = lambda doc, error: self._query_callback(
-                                                    doc, error, 'removal',
-                                                    call_next)
+                                                    doc, error, 'removal')
 
             logging.info('Removing webhook for %s %s', keys, url)
             self.backend.remove_hooks(key, url, callback_wrapper)
