@@ -33,23 +33,19 @@ class Backend(object):
 
         elif self.config['system_type'] == 'gevent':
             import pymongo
+            db_name = self.config['mongo'].pop('dbname')
             self.db = pymongo.Connection(pool_id='skyhooks',
                     use_greenlets=True,
-                    **self.config['mongo'])
+                    **self.config['mongo'])[db_name]
 
-    @property
-    def collection(self):
-        return self.db[self.config['mongo_collection']]
+        self.collection = self.db[self.config['mongo_collection']]
 
     def get_hooks(self, keys, url=None, callback=None):
 
         if callback is None:
             callback = lambda doc, error: None
 
-        query = {}
-
-        for name, value in keys.iteritems():
-            query[name] = value
+        query = self._build_query(keys)
 
         if self.config['system_type'] == 'twisted':
             pass
@@ -70,26 +66,24 @@ class Backend(object):
 
             self.ioloop.add_callback(find)
 
-    def update_hooks(self, keys, url, callback=None):
+    def update_hooks(self, keys, url, create=True, callback=None):
 
         if callback is None:
             callback = lambda doc, error: None
 
-        query = {}
         doc = {
             'url': url,
-            'updated': datetime.now()
+            'updated': datetime.utcnow()
         }
 
-        for name, value in keys.iteritems():
-            doc[name] = query[name] = value
+        query = self._build_query(keys)
 
         if self.config['system_type'] == 'twisted':
             pass
 
         elif self.config['system_type'] == 'tornado':
             self.collection.update(query, doc, callback=callback,
-                                   upsert=True, safe=True)
+                                   upsert=create, safe=True)
 
         elif self.config['system_type'] == 'gevent':
             def update():
@@ -97,7 +91,7 @@ class Backend(object):
                 error = None
                 try:
                     resp = self.collection.update(query, doc,
-                                                  upsert=True,
+                                                  upsert=create,
                                                   safe=True)
                     if resp['err'] is not None:
                         error = resp['err']
@@ -113,12 +107,7 @@ class Backend(object):
         if callback is None:
             callback = lambda doc, error: None
 
-        query = {
-            'url': url
-        }
-
-        for name, value in keys.iteritems():
-            query[name] = value
+        query = self._build_query(keys, url)
 
         if self.config['system_type'] == 'twisted':
             pass
@@ -140,3 +129,21 @@ class Backend(object):
                 callback(resp, error)
 
             self.ioloop.add_callback(delete)
+
+    def _build_query(self, keys, url=None):
+
+        query = {
+            '$or': []
+        }
+
+        for name, values in keys.iteritems():
+            subquery = {}
+            subquery[name] = {
+                '$in': values
+            }
+            query['$or'].append(subquery)
+
+        if url is not None:
+            query['url'] = url
+
+        return query
