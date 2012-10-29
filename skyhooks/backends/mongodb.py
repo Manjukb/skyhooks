@@ -1,6 +1,7 @@
 """Abstracted MongoDB connection and query utils
 """
 
+import logging
 from datetime import datetime
 from skyhooks import IOLoop
 
@@ -81,6 +82,7 @@ class Backend(object):
             doc['url'] = url
 
         query = self._build_query(keys)
+        logging.info('Query %s', query)
 
         if self.config['system_type'] == 'twisted':
             pass

@@ -99,14 +99,15 @@ class WebhookContainer(object):
 
     def queue_renew_all(self, *args, **kwargs):
 
+        logging.info('Queued webhook renewal cycle.')
         self.ioloop.add_timeout(self.renew_all, self.config['renew_seconds'])
 
     def renew_all(self):
 
         keys = dict((k, v.keys()) for (k, v) in self.callbacks.iteritems())
         if keys:
-            logging.debug('Renewing webhooks..')
+            logging.info('Renewing webhooks.')
             self.backend.update_hooks(keys, callback=self.queue_renew_all,
                                   create=False)
         else:
-            logging.debug('No webhooks to renew.')
+            logging.info('No webhooks to renew.')
