@@ -13,7 +13,7 @@ class WebhookContainer(object):
 
         if config is None:
             config = {}
-        config.extend(kwargs)
+        config.update(kwargs)
 
         if 'system_type' not in config:
             raise AttributeError('Please set the system_type to either gevent '
