@@ -1,7 +1,6 @@
 """Abstracted MongoDB connection and query utils
 """
 
-import logging
 from datetime import datetime
 from skyhooks import IOLoop
 
@@ -81,8 +80,11 @@ class Backend(object):
         if url is not None:
             doc['url'] = url
 
+        if not create:
+            # Use $set to update, so we maintain existing fields like url
+            doc = {'$set': doc}
+
         query = self._build_query(keys)
-        logging.info('Query %s', query)
 
         if self.config['system_type'] == 'twisted':
             pass
@@ -144,8 +146,9 @@ class Backend(object):
 
         for name, values in keys.iteritems():
             subquery = {}
-            if type(values) not in ('list', 'tuple'):
+            if type(values) not in (list, tuple):
                 values = [values]
+
             subquery[name] = {
                 '$in': values
             }

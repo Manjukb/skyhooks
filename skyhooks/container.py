@@ -53,7 +53,7 @@ class WebhookContainer(object):
 
     def register(self, keys, url, callback):
 
-        if type(keys) in ('list', 'tuple'):
+        if type(keys) in (list, tuple):
             keys = zip(keys)
 
         for key, value in keys.iteritems():
@@ -73,7 +73,7 @@ class WebhookContainer(object):
 
     def unregister(self, keys, url, callback):
 
-        if type(keys) in ('list', 'tuple'):
+        if type(keys) in (list, tuple):
             keys = zip(keys)
 
         for key, value in keys.iteritems():
@@ -89,13 +89,20 @@ class WebhookContainer(object):
 
     def notify(self, keys, data):
 
-        if type(keys) in ('list', 'tuple'):
+        if type(keys) in (list, tuple):
             keys = zip(keys)
 
+        notified = []
         for key, value in keys.iteritems():
             if key in self.callbacks and value in self.callbacks[key]:
+                notified.append(True)
+
                 for callback in self.callbacks[key][value]:
                     self.ioloop.add_callback(lambda cb=callback: cb(data))
+            else:
+                notified.append(False)
+
+        return all(notified)
 
     def queue_renew_all(self, *args, **kwargs):
 
