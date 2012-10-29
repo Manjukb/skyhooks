@@ -9,6 +9,12 @@ from skyhooks import IOLoop
 class WebhookContainer(object):
     callbacks = {}
 
+    # Event callbacks
+    on_register = []
+    on_unregister = []
+    on_notify = []
+    on_renew = []
+
     def __init__(self, config=None, **kwargs):
 
         if config is None:
@@ -51,7 +57,7 @@ class WebhookContainer(object):
         if error:
             logging.error('Webhook %s error: %s', action, error)
 
-    def register(self, keys, callback, url):
+    def register(self, keys, url, callback):
 
         if type(keys) in ('list', 'tuple'):
             keys = zip(keys)
@@ -71,7 +77,10 @@ class WebhookContainer(object):
         logging.info('Registering webhook for %s %s', keys, url)
         self.backend.update_hooks(key, url, callback_wrapper)
 
-    def unregister(self, keys, callback, url):
+        kw = {'keys': keys, 'url': url}
+        (self.ioloop.add_callback(c, kwargs=kw) for c in self.on_register)
+
+    def unregister(self, keys, url, callback):
 
         if type(keys) in ('list', 'tuple'):
             keys = zip(keys)
@@ -86,6 +95,9 @@ class WebhookContainer(object):
             logging.info('Removing webhook for %s %s', keys, url)
             self.backend.remove_hooks(key, url, callback_wrapper)
 
+        kw = {'keys': keys, 'url': url}
+        (self.ioloop.add_callback(c, kwargs=kw) for c in self.on_unregister)
+
     def notify(self, keys, data):
 
         if type(keys) in ('list', 'tuple'):
@@ -95,6 +107,9 @@ class WebhookContainer(object):
             if key in self.callbacks and value in self.callbacks[key]:
                 for callback in self.callbacks[key][value]:
                     self.ioloop.add_callback(lambda cb=callback: cb(data))
+
+        kw = {'keys': keys, 'data': data}
+        (self.ioloop.add_callback(c, kwargs=kw) for c in self.on_notify)
 
     def queue_renew_all(self, *args, **kwargs):
 
@@ -106,3 +121,5 @@ class WebhookContainer(object):
         if keys:
             self.backend.update_hooks(keys, callback=self.queue_renew_all,
                                   create=False)
+
+        (self.ioloop.add_callback(c) for c in self.on_renew)
