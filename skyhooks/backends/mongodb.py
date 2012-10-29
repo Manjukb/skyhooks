@@ -76,6 +76,7 @@ class Backend(object):
         doc = {
             'updated': datetime.utcnow()
         }
+        doc.update(keys)
         if url is not None:
             doc['url'] = url
 
