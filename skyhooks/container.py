@@ -9,12 +9,6 @@ from skyhooks import IOLoop
 class WebhookContainer(object):
     callbacks = {}
 
-    # Event callbacks
-    on_register = []
-    on_unregister = []
-    on_notify = []
-    on_renew = []
-
     def __init__(self, config=None, **kwargs):
 
         if config is None:
@@ -44,7 +38,7 @@ class WebhookContainer(object):
         """
 
         if not hasattr(self, '_backend'):
-            backend_path = '.backends.%s' % (self.config.get('backend',
+            backend_path = 'skyhooks.backends.%s' % (self.config.get('backend',
                                                              'mongodb'))
             backend_module = __import__(name=backend_path, globals=globals(),
                    locals=locals(), fromlist="*")
@@ -75,10 +69,7 @@ class WebhookContainer(object):
                                                 doc, error, 'registration')
 
         logging.info('Registering webhook for %s %s', keys, url)
-        self.backend.update_hooks(key, url, callback_wrapper)
-
-        kw = {'keys': keys, 'url': url}
-        (self.ioloop.add_callback(c, kwargs=kw) for c in self.on_register)
+        self.backend.update_hooks(keys, url, callback_wrapper)
 
     def unregister(self, keys, url, callback):
 
@@ -93,10 +84,8 @@ class WebhookContainer(object):
                                                     doc, error, 'removal')
 
             logging.info('Removing webhook for %s %s', keys, url)
-            self.backend.remove_hooks(key, url, callback_wrapper)
 
-        kw = {'keys': keys, 'url': url}
-        (self.ioloop.add_callback(c, kwargs=kw) for c in self.on_unregister)
+        self.backend.remove_hooks(keys, url, callback_wrapper)
 
     def notify(self, keys, data):
 
@@ -108,9 +97,6 @@ class WebhookContainer(object):
                 for callback in self.callbacks[key][value]:
                     self.ioloop.add_callback(lambda cb=callback: cb(data))
 
-        kw = {'keys': keys, 'data': data}
-        (self.ioloop.add_callback(c, kwargs=kw) for c in self.on_notify)
-
     def queue_renew_all(self, *args, **kwargs):
 
         self.ioloop.add_timeout(self.renew_all, self.config['renew_seconds'])
@@ -119,7 +105,8 @@ class WebhookContainer(object):
 
         keys = dict((k, v.keys()) for (k, v) in self.callbacks.iteritems())
         if keys:
+            logging.debug('Renewing webhooks..')
             self.backend.update_hooks(keys, callback=self.queue_renew_all,
                                   create=False)
-
-        (self.ioloop.add_callback(c) for c in self.on_renew)
+        else:
+            logging.debug('No webhooks to renew.')
