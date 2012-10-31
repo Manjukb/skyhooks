@@ -76,16 +76,29 @@ class WebhookContainer(object):
         if type(keys) in (list, tuple):
             keys = zip(keys)
 
+        deleted_keys = {}
         for key, value in keys.iteritems():
             if key in self.callbacks and value in self.callbacks[key]:
                 self.callbacks[key][value].remove(callback)
 
+                if len(self.callbacks[key][value]) is 0:
+                    del self.callbacks[key][value]
+
+                    if key not in deleted_keys:
+                        deleted_keys[key] = {}
+
+                    deleted_keys[key] = value
+
+                logging.info('Removing callback for %s %s %s' % (key, value,
+                                                                 url))
+
+        if deleted_keys:
             callback_wrapper = lambda doc, error: self._query_callback(
                                                     doc, error, 'removal')
 
-            logging.info('Removing webhook for %s %s', keys, url)
+            logging.info('Removing webhook for %s %s', deleted_keys, url)
 
-        self.backend.remove_hooks(keys, url, callback_wrapper)
+            self.backend.remove_hooks(deleted_keys, url, callback_wrapper)
 
     def notify(self, keys, data):
 
