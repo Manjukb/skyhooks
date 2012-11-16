@@ -3,7 +3,6 @@
 
 from __future__ import absolute_import
 
-import logging
 from tornado.web import RequestHandler
 from tornado.escape import json_decode
 
@@ -18,7 +17,9 @@ class WebhookHandler(RequestHandler):
         data = payload['data']
         keys = payload['keys']
 
-        logging.info("Received webhook postback for %s", keys)
+        self.application.webhook_container.logger.info("Received webhook "
+                                                       "postback for %s",
+                                                                     keys)
 
         if not self.application.webhook_container.notify(keys, data):
             self.set_status(404)

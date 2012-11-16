@@ -11,6 +11,8 @@ class WebhookContainer(object):
 
     def __init__(self, config=None, **kwargs):
 
+        self.logger = logging.getLogger('skyhooks')
+
         if config is None:
             config = {}
         config.update(kwargs)
@@ -49,7 +51,7 @@ class WebhookContainer(object):
     def _query_callback(self, doc, error, action):
 
         if error:
-            logging.error('Webhook %s error: %s', action, error)
+            self.logger.error('Webhook %s error: %s', action, error)
 
     def register(self, keys, url, callback):
 
@@ -68,7 +70,7 @@ class WebhookContainer(object):
         callback_wrapper = lambda doc, error: self._query_callback(
                                                 doc, error, 'registration')
 
-        logging.info('Registering webhook for %s %s', keys, url)
+        self.logger.info('Registering webhook for %s %s', keys, url)
         self.backend.update_hooks(keys, url, callback_wrapper)
 
     def unregister(self, keys, url, callback):
@@ -89,14 +91,15 @@ class WebhookContainer(object):
 
                     deleted_keys[key] = value
 
-                logging.info('Removing callback for %s %s %s' % (key, value,
-                                                                 url))
+                self.logger.info('Removing callback for %s %s %s' % (key,
+                                                                     value,
+                                                                     url))
 
         if deleted_keys:
             callback_wrapper = lambda doc, error: self._query_callback(
                                                     doc, error, 'removal')
 
-            logging.info('Removing webhook for %s %s', deleted_keys, url)
+            self.logger.info('Removing webhook for %s %s', deleted_keys, url)
 
             self.backend.remove_hooks(deleted_keys, url, callback_wrapper)
 
@@ -119,15 +122,15 @@ class WebhookContainer(object):
 
     def queue_renew_all(self, *args, **kwargs):
 
-        logging.info('Queued webhook renewal cycle.')
+        self.logger.info('Queued webhook renewal cycle.')
         self.ioloop.add_timeout(self.renew_all, self.config['renew_seconds'])
 
     def renew_all(self):
 
         keys = dict((k, v.keys()) for (k, v) in self.callbacks.iteritems())
         if keys:
-            logging.info('Renewing webhooks.')
+            self.logger.info('Renewing webhooks.')
             self.backend.update_hooks(keys, callback=self.queue_renew_all,
                                   create=False)
         else:
-            logging.info('No webhooks to renew.')
+            self.logger.info('No webhooks to renew.')
