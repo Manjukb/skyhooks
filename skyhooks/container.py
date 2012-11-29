@@ -134,3 +134,4 @@ class WebhookContainer(object):
                                   create=False)
         else:
             self.logger.info('No webhooks to renew.')
+            self.queue_renew_all()
