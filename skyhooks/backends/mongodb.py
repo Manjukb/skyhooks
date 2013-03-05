@@ -83,6 +83,8 @@ class Backend(object):
         doc = {'$set': doc}
         doc['$addToSet'] = {}
         for key, key_values in keys.iteritems():
+            if type(key_values) not in (list, tuple):
+                key_values = [key_values]
             doc['$addToSet'][key] = {'$each': key_values}
 
         query = self._build_query(keys)
