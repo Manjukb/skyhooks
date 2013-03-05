@@ -76,13 +76,12 @@ class Backend(object):
         doc = {
             'updated': datetime.utcnow()
         }
-        doc.update(keys)
+        doc.update({'$push': keys})
         if url is not None:
             doc['url'] = url
 
-        if not create:
-            # Use $set to update, so we maintain existing fields like url
-            doc = {'$set': doc}
+        # Use $set to update, so we maintain existing fields like url
+        doc = {'$set': doc}
 
         query = self._build_query(keys)
 
@@ -91,7 +90,7 @@ class Backend(object):
 
         elif self.config['system_type'] == 'tornado':
             self.collection.update(query, doc, callback=callback,
-                                   upsert=create, safe=True)
+                                   upsert=True, safe=True)
 
         elif self.config['system_type'] == 'gevent':
             def update():
@@ -99,7 +98,7 @@ class Backend(object):
                 error = None
                 try:
                     resp = self.collection.update(query, doc,
-                                                  upsert=create,
+                                                  upsert=True,
                                                   safe=True)
                     if resp['err'] is not None:
                         error = resp['err']
@@ -145,14 +144,11 @@ class Backend(object):
         }
 
         for name, values in keys.iteritems():
-            subquery = {}
             if type(values) not in (list, tuple):
                 values = [values]
 
-            subquery[name] = {
-                '$in': values
-            }
-            query['$or'].append(subquery)
+            for value in values:
+                query['$or'].append({name: value})
 
         if url is not None:
             query['url'] = url
