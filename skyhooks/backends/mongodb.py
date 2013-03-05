@@ -81,7 +81,8 @@ class Backend(object):
 
         # Use $set to update, so we maintain existing fields like url
         doc = {'$set': doc}
-        doc['$addToSet'] = keys
+        for key, key_values in keys:
+            doc['$addToSet'][key] = {'$each': key_values}
 
         query = self._build_query(keys)
 
