@@ -87,7 +87,7 @@ class Backend(object):
                 key_values = [key_values]
             doc['$addToSet'][key] = {'$each': key_values}
 
-        query = self._build_query(keys)
+        query = self._build_query(keys, url)
 
         if self.config['system_type'] == 'twisted':
             pass
