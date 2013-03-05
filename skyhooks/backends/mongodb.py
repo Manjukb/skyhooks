@@ -81,6 +81,7 @@ class Backend(object):
 
         # Use $set to update, so we maintain existing fields like url
         doc = {'$set': doc}
+        doc['$addToSet'] = {}
         for key, key_values in keys.iteritems():
             doc['$addToSet'][key] = {'$each': key_values}
 
