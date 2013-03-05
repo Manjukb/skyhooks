@@ -76,12 +76,12 @@ class Backend(object):
         doc = {
             'updated': datetime.utcnow()
         }
-        doc.update({'$push': keys})
         if url is not None:
             doc['url'] = url
 
         # Use $set to update, so we maintain existing fields like url
         doc = {'$set': doc}
+        doc['$push'] = keys
 
         query = self._build_query(keys)
 
