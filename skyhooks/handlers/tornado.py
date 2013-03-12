@@ -26,4 +26,5 @@ class WebhookHandler(RequestHandler):
             return
 
         # Celery compatible "hook" response, good enough for our purposes
+        self.content_type = 'application/json'
         return '{"status": "ok"}'
