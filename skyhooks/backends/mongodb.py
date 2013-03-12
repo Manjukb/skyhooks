@@ -42,12 +42,12 @@ class Backend(object):
 
         self.collection = self.db[self.config['mongodb_collection']]
 
-    def get_hooks(self, keys, url=None, callback=None):
+    def get_hooks(self, keys, url, callback=None):
 
         if callback is None:
             callback = lambda doc, error: None
 
-        query = self._build_query(keys)
+        query = self._build_query(keys, url)
 
         if self.config['system_type'] == 'twisted':
             pass
@@ -68,16 +68,15 @@ class Backend(object):
 
             self.ioloop.add_callback(find)
 
-    def update_hooks(self, keys, url=None, callback=None, create=True):
+    def update_hooks(self, keys, url, callback=None):
 
         if callback is None:
             callback = lambda doc, error: None
 
         doc = {
+            'url': url,
             'updated': datetime.utcnow()
         }
-        if url is not None:
-            doc['url'] = url
 
         # Use $set to update, so we maintain existing fields like url
         doc = {'$set': doc}
@@ -141,9 +140,10 @@ class Backend(object):
 
             self.ioloop.add_callback(delete)
 
-    def _build_query(self, keys, url=None):
+    def _build_query(self, keys, url):
 
         query = {
+            'url': url,
             '$or': []
         }
 
@@ -153,8 +153,5 @@ class Backend(object):
 
             for value in values:
                 query['$or'].append({name: value})
-
-        if url is not None:
-            query['url'] = url
 
         return query

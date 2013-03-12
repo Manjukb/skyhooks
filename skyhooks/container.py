@@ -17,15 +17,19 @@ class WebhookContainer(object):
             config = {}
         config.update(kwargs)
 
+        if 'url' not in config:
+            raise AttributeError('Please provide a webhook URL')
+
         if 'system_type' not in config:
             raise AttributeError('Please set the system_type to either gevent '
                                  'or tornado')
 
         elif config['system_type'] == 'twisted':
             raise NotImplemented('Twisted Matrix support is planned for the'
-                                 ' future.')
+                                 ' future')
 
         self.config = config
+        self.url = config['url']
         self.ioloop = IOLoop(config['system_type'])
 
         if self.config.get('auto_renew', True):
@@ -53,7 +57,7 @@ class WebhookContainer(object):
         if error:
             self.logger.error('Webhook %s error: %s', action, error)
 
-    def register(self, keys, url, callback):
+    def register(self, keys, callback):
 
         if type(keys) in (list, tuple):
             keys = zip(keys)
@@ -70,10 +74,10 @@ class WebhookContainer(object):
         callback_wrapper = lambda doc, error: self._query_callback(
                                                 doc, error, 'registration')
 
-        self.logger.info('Registering webhook for %s %s', keys, url)
-        self.backend.update_hooks(keys, url, callback_wrapper)
+        self.logger.info('Registering webhook for %s %s', keys, self.url)
+        self.backend.update_hooks(keys, self.url, callback_wrapper)
 
-    def unregister(self, keys, url, callback):
+    def unregister(self, keys, callback):
 
         if type(keys) in (list, tuple):
             keys = zip(keys)
@@ -93,15 +97,16 @@ class WebhookContainer(object):
 
                 self.logger.info('Removing callback for %s %s %s' % (key,
                                                                      value,
-                                                                     url))
+                                                                     self.url))
 
         if deleted_keys:
             callback_wrapper = lambda doc, error: self._query_callback(
                                                     doc, error, 'removal')
 
-            self.logger.info('Removing webhook for %s %s', deleted_keys, url)
+            self.logger.info('Removing webhook for %s %s', deleted_keys,
+                                                           self.url)
 
-            self.backend.remove_hooks(deleted_keys, url, callback_wrapper)
+            self.backend.remove_hooks(deleted_keys, self.url, callback_wrapper)
 
     def notify(self, keys, data):
 
@@ -131,7 +136,7 @@ class WebhookContainer(object):
         if keys:
             self.logger.info('Renewing webhooks.')
             self.backend.update_hooks(keys, callback=self.queue_renew_all,
-                                  create=False)
+                                      url=self.url)
         else:
             self.logger.info('No webhooks to renew.')
             self.queue_renew_all()
