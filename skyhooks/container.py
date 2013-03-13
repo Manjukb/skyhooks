@@ -136,7 +136,7 @@ class WebhookContainer(object):
         if keys:
             self.logger.info('Renewing webhooks.')
             self.logger.debug('%d callbacks registered in skyhooks.' % (
-                         sum(len(v) for v in self.callbacks.itervalues)))
+                         sum(len(v) for v in self.callbacks.itervalues())))
             self.backend.update_hooks(keys, callback=self.queue_renew_all,
                                       url=self.url)
         else:
