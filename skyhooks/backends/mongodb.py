@@ -29,9 +29,10 @@ class Backend(object):
             self.ioloop = ioloop
 
         if self.config['system_type'] == 'tornado':
-            import asyncmongo
-            self.db = asyncmongo.Client(pool_id='skyhooks',
-                    **self.config['mongodb'])
+            import motor
+            db_name = self.config['mongodb'].pop('dbname')
+            client = motor.MotorClient(**self.config['mongodb']).open_sync()
+            self.db = client[db_name]
 
         elif self.config['system_type'] == 'gevent':
             import pymongo
@@ -93,7 +94,7 @@ class Backend(object):
 
         elif self.config['system_type'] == 'tornado':
             self.collection.update(query, doc, callback=callback,
-                                   upsert=True, safe=True)
+                                   upsert=True)
 
         elif self.config['system_type'] == 'gevent':
             def update():
