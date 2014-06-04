@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 
 from tornado.web import RequestHandler
-from tornado.escape import json_decode
+from tornado.escape import json_decode, json_encode
 
 
 class WebhookHandler(RequestHandler):
@@ -27,4 +27,4 @@ class WebhookHandler(RequestHandler):
 
         # Celery compatible "hook" response, good enough for our purposes
         self.content_type = 'application/json'
-        return '{"status": "ok"}'
+        self.write(json_encode({"status": "ok"}))
