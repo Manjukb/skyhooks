@@ -31,7 +31,7 @@ class Backend(object):
         if self.config['system_type'] == 'tornado':
             import motor
             db_name = self.config['mongodb'].pop('dbname')
-            client = motor.MotorClient(**self.config['mongodb']).open_sync()
+            client = motor.MotorClient(**self.config['mongodb'])
             self.db = client[db_name]
 
         elif self.config['system_type'] == 'gevent':
