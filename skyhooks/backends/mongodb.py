@@ -151,8 +151,6 @@ class Backend(object):
         for name, values in keys.iteritems():
             if type(values) not in (list, tuple):
                 values = [values]
-
-            for value in values:
-                query['$or'].append({name: value})
+            query['$or'].append({name: {'$in': values}})
 
         return query
