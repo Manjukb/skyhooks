@@ -15,7 +15,6 @@ except ImportError:
 setup(
     name='skyhooks',
     description='Webhook handling utilities for asynchronous python apps ',
-    long_description=open(os.path.join(cwd, 'README.rst')).readlines(),
     version=__version__,
     author='Wes Mason',
     author_email='wes@serverdensity.com',
