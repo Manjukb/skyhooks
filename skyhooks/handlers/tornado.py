@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 
+from six import u
 from tornado.web import RequestHandler
 from tornado.escape import json_decode, json_encode
 
@@ -13,7 +14,7 @@ class WebhookHandler(RequestHandler):
     """
 
     def post(self):
-        payload = json_decode(self.request.body)
+        payload = json_decode(u(self.request.body))
         data = payload['data']
         keys = payload['keys']
 

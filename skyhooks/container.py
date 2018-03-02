@@ -3,6 +3,7 @@ pointers in a persistence layer (e.g. MongoDB) with TTLs.
 """
 
 import logging
+from six import iteritems
 from skyhooks import IOLoop
 
 
@@ -62,7 +63,7 @@ class WebhookContainer(object):
         if type(keys) in (list, tuple):
             keys = zip(keys)
 
-        for key, value in keys.iteritems():
+        for key, value in iteritems(keys):
             if key not in self.callbacks:
                 self.callbacks[key] = {}
 
@@ -83,7 +84,7 @@ class WebhookContainer(object):
             keys = zip(keys)
 
         deleted_keys = {}
-        for key, value in keys.iteritems():
+        for key, value in iteritems(keys):
             if key in self.callbacks and value in self.callbacks[key]:
                 self.callbacks[key][value].remove(callback)
 
@@ -114,7 +115,7 @@ class WebhookContainer(object):
             keys = zip(keys)
 
         notified = []
-        for key, value in keys.iteritems():
+        for key, value in iteritems(keys):
             if key in self.callbacks and value in self.callbacks[key]:
                 notified.append(True)
 
@@ -132,7 +133,7 @@ class WebhookContainer(object):
 
     def renew_all(self):
 
-        keys = dict((k, v.keys()) for (k, v) in self.callbacks.iteritems())
+        keys = dict((k, v.keys()) for (k, v) in iteritems(self.callbacks))
         if keys:
             self.logger.info('Renewing webhooks.')
             self.logger.debug('%d callbacks registered in skyhooks.' % (

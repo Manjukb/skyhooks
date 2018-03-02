@@ -2,6 +2,8 @@
 """
 
 from datetime import datetime
+
+from six import iteritems
 from skyhooks import IOLoop
 
 
@@ -82,7 +84,7 @@ class Backend(object):
         # Use $set to update, so we maintain existing fields like url
         doc = {'$set': doc}
         doc['$addToSet'] = {}
-        for key, key_values in keys.iteritems():
+        for key, key_values in iteritems(keys):
             if type(key_values) not in (list, tuple):
                 key_values = [key_values]
             doc['$addToSet'][key] = {'$each': key_values}
@@ -148,7 +150,7 @@ class Backend(object):
             '$or': []
         }
 
-        for name, values in keys.iteritems():
+        for name, values in iteritems(keys):
             if type(values) not in (list, tuple):
                 values = [values]
             query['$or'].append({name: {'$in': values}})
