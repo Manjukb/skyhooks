@@ -3,7 +3,7 @@ pointers in a persistence layer (e.g. MongoDB) with TTLs.
 """
 
 import logging
-from six import iteritems
+from six import iteritems, itervalues
 from skyhooks import IOLoop
 
 
@@ -137,7 +137,7 @@ class WebhookContainer(object):
         if keys:
             self.logger.info('Renewing webhooks.')
             self.logger.debug('%d callbacks registered in skyhooks.' % (
-                         sum(len(v) for v in self.callbacks.itervalues())))
+                         sum(len(v) for v in itervalues(self.callbacks))))
             self.backend.update_hooks(keys, callback=self.queue_renew_all,
                                       url=self.url)
         else:
