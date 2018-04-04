@@ -124,6 +124,10 @@ class WebhookContainer(object):
             else:
                 notified.append(False)
 
+        # If notified is empty, return notified
+        if not notified:
+            return True
+
         return all(notified)
 
     def queue_renew_all(self, *args, **kwargs):
