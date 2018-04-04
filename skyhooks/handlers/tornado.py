@@ -21,9 +21,8 @@ class WebhookHandler(RequestHandler):
         self.application.webhook_container.logger.info(
             'Received webhook postback for {}'.format(keys))
 
-        if not self.application.webhook_container.notify(keys, data):
-            self.set_status(404)
-            return
+        notified = self.application.webhook_container.notify(keys, data)
 
         # Celery compatible "hook" response, good enough for our purposes
-        self.write({"status": "ok"})
+        self.write({"status": "ok",
+                    "notified": notified})
