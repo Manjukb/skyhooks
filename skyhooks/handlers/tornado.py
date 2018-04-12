@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 from six import u
 from tornado.web import RequestHandler
-from tornado.escape import json_decode, json_encode
+from tornado.escape import json_decode
 
 
 class WebhookHandler(RequestHandler):
@@ -18,14 +18,11 @@ class WebhookHandler(RequestHandler):
         data = payload['data']
         keys = payload['keys']
 
-        self.application.webhook_container.logger.info("Received webhook "
-                                                       "postback for %s",
-                                                                     keys)
+        self.application.webhook_container.logger.info(
+            'Received webhook postback for {}'.format(keys))
 
-        if not self.application.webhook_container.notify(keys, data):
-            self.set_status(404)
-            return
+        notified = self.application.webhook_container.notify(keys, data)
 
         # Celery compatible "hook" response, good enough for our purposes
-        self.content_type = 'application/json'
-        self.write(json_encode({"status": "ok"}))
+        self.write({"status": "ok",
+                    "notified": notified})
